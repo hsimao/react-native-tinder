@@ -1,7 +1,13 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  initializeFirestore,
+} from 'firebase/firestore';
+
 import {
   apiKey,
   authDomain,
@@ -22,6 +28,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
-const db = getFirestore();
 
-export { auth, db };
+// fix: firebase version 9 setDoc not working issues https://github.com/firebase/firebase-js-sdk/issues/1674#issuecomment-944041831
+const db = initializeFirestore(app, {
+  useFetchStreams: false,
+});
+
+export { auth, db, doc, setDoc, serverTimestamp };
