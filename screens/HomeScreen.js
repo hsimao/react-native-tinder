@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useLayoutEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import tw from 'tailwind-rn';
@@ -6,6 +6,7 @@ import useAuth from '../hooks/useAuth';
 import { SafeAreaView } from 'react-native';
 import { Ionicons, Entypo } from '@expo/vector-icons';
 import Swiper from 'react-native-deck-swiper';
+import { db, doc, onSnapshot } from '../firebase';
 
 const FAKE_USER_DATA = [
   {
@@ -41,30 +42,62 @@ const HomeScreen = () => {
   const swipeRef = useRef(null);
   const navigation = useNavigation();
   const { user, logout } = useAuth();
+  const [profiles, setProfiles] = useState([]);
 
-  const renderCard = item => (
-    <View key={item.id} style={tw('relative bg-white h-3/4 rounded-xl')}>
-      <Image
-        style={tw('absolute top-0 h-full w-full rounded-xl')}
-        source={{ uri: item.photoURL }}
-      />
+  // 檢查當前用戶自己是否已經儲存在 firestore 內, 若無將自動彈出 profile modal 頁面
+  useLayoutEffect(
+    () =>
+      onSnapshot(doc(db, 'users', user.uid), shapshot => {
+        if (!shapshot.exists()) {
+          navigation.navigate('Modal');
+        }
+      }),
+    []
+  );
 
-      <View
-        style={[
-          tw(
-            'absolute bottom-0 flex-row justify-between bg-white w-full px-6 py-3 rounded-b-xl'
-          ),
-          styles.cardShadow,
-        ]}
-      >
-        <View>
-          <Text style={tw('text-xl font-bold')}>
-            {item.firstName} {item.lastName}
-          </Text>
-          <Text>{item.job}</Text>
+  const renderCard = item =>
+    item ? (
+      <View key={item.id} style={tw('relative bg-white h-3/4 rounded-xl')}>
+        <Image
+          style={tw('absolute top-0 h-full w-full rounded-xl')}
+          source={{ uri: item.photoURL }}
+        />
+
+        <View
+          style={[
+            tw(
+              'absolute bottom-0 flex-row justify-between bg-white w-full px-6 py-3 rounded-b-xl'
+            ),
+            styles.cardShadow,
+          ]}
+        >
+          <View>
+            <Text style={tw('text-xl font-bold')}>
+              {item.firstName} {item.lastName}
+            </Text>
+            <Text>{item.job}</Text>
+          </View>
+          <Text style={tw('text-2xl font-bold')}>{item.age}</Text>
         </View>
-        <Text style={tw('text-2xl font-bold')}>{item.age}</Text>
       </View>
+    ) : (
+      rednerEmptyCard()
+    );
+
+  const rednerEmptyCard = () => (
+    <View
+      style={[
+        tw('relative bg-white h-3/4 rounded-xl justify-center items-center'),
+        styles.cardShadow,
+      ]}
+    >
+      <Text style={tw('font-bold pb-5')}>No more profiles</Text>
+      <Image
+        style={tw('h-20 w-full')}
+        height={100}
+        width={100}
+        source={{ uri: 'https://links.papareact.com/6gb' }}
+      />
     </View>
   );
 
@@ -79,7 +112,7 @@ const HomeScreen = () => {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Modal')}>
           <Image
             style={tw('h-14 w-14')}
             source={require('../assets/logo.png')}
@@ -97,7 +130,7 @@ const HomeScreen = () => {
         <Swiper
           ref={swipeRef}
           containerStyle={{ backgroundColor: 'transparent' }}
-          cards={FAKE_USER_DATA}
+          cards={profiles}
           stackSize={5}
           cardIndex={0}
           animateCardOpacity
