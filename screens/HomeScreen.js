@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import tw from 'tailwind-rn';
 import useAuth from '../hooks/useAuth';
 import { SafeAreaView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Entypo } from '@expo/vector-icons';
 import Swiper from 'react-native-deck-swiper';
 
 const FAKE_USER_DATA = [
@@ -38,13 +38,14 @@ const FAKE_USER_DATA = [
 ];
 
 const HomeScreen = () => {
+  const swipeRef = useRef(null);
   const navigation = useNavigation();
   const { user, logout } = useAuth();
 
   const renderCard = item => (
     <View key={item.id} style={tw('relative bg-white h-3/4 rounded-xl')}>
       <Image
-        style={tw('absolute top-0 h-50 w-full rounded-xl')}
+        style={tw('absolute top-0 h-full w-full rounded-xl')}
         source={{ uri: item.photoURL }}
       />
 
@@ -68,7 +69,7 @@ const HomeScreen = () => {
   );
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={tw('flex-1')}>
       {/* Header */}
       <View style={tw('flex-row items-center justify-between px-5')}>
         <TouchableOpacity onPress={logout}>
@@ -94,6 +95,7 @@ const HomeScreen = () => {
       {/* Cards */}
       <View style={tw('flex-1')}>
         <Swiper
+          ref={swipeRef}
           containerStyle={{ backgroundColor: 'transparent' }}
           cards={FAKE_USER_DATA}
           stackSize={5}
@@ -127,6 +129,26 @@ const HomeScreen = () => {
           }}
           renderCard={renderCard}
         />
+      </View>
+
+      {/* Bottom tool */}
+      <View style={tw('flex-row justify-evenly')}>
+        <TouchableOpacity
+          onPress={() => swipeRef.current.swipeLeft()}
+          style={tw(
+            'items-center justify-center rounded-full h-16 w-16 bg-red-200'
+          )}
+        >
+          <Entypo name="cross" size={24} color="red" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => swipeRef.current.swipeRight()}
+          style={tw(
+            'items-center justify-center rounded-full h-16 w-16 bg-green-200'
+          )}
+        >
+          <Entypo name="heart" size={24} color="green" />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
