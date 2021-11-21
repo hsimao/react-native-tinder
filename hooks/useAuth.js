@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from 'react';
 import * as Google from 'expo-google-app-auth';
 import {
   GoogleAuthProvider,
@@ -44,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     signOut(auth)
       .catch(error => setError(error))
-      .finally(() => setLoading(true));
+      .finally(() => setLoading(false));
   };
 
   const signInWithGoogle = async () => {
@@ -66,16 +72,20 @@ export const AuthProvider = ({ children }) => {
       .finally(() => setLoading(false));
   };
 
+  // NOTE: 緩存 useAuth return 變數, 只有當 user, loading, error 發生變化才會更新, 降低重新 render 的開銷
+  const memoedValue = useMemo(
+    () => ({
+      user,
+      loading,
+      error,
+      signInWithGoogle,
+      logout,
+    }),
+    [user, loading, error]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        signInWithGoogle,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={memoedValue}>
       {!lodingInitial && children}
     </AuthContext.Provider>
   );
