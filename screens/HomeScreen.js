@@ -1,14 +1,71 @@
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { View, Text, Button, Image, TouchableOpacity } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import tw from 'tailwind-rn';
 import useAuth from '../hooks/useAuth';
 import { SafeAreaView } from 'react-native';
-import { AntDesign, Entypo, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import Swiper from 'react-native-deck-swiper';
+
+const FAKE_USER_DATA = [
+  {
+    id: 124,
+    firstName: 'Elon',
+    lastName: 'Musk',
+    job: 'Software Developer',
+    photoURL:
+      'https://upload.wikimedia.org/wikipedia/commons/8/85/Elon_Musk_Royal_Society_%28crop1%29.jpg',
+    age: 40,
+  },
+  {
+    id: 123,
+    firstName: 'Mars',
+    lastName: 'CHEN',
+    job: 'Software Developer',
+    photoURL:
+      'https://lh3.googleusercontent.com/ogw/ADea4I5pFdEo3tcn87r64a0g9LdZc931xD3myZMiaaSvGQ=s192-c-mo',
+    age: 27,
+  },
+  {
+    id: 125,
+    firstName: 'Jack',
+    lastName: 'CHEN',
+    job: 'Software Developer',
+    photoURL:
+      'https://gravatar.com/avatar/ed1b7d08248dd08eeac3cfba428b8545?s=400&d=robohash&r=x',
+    age: 21,
+  },
+];
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { user, logout } = useAuth();
+
+  const renderCard = item => (
+    <View key={item.id} style={tw('relative bg-white h-3/4 rounded-xl')}>
+      <Image
+        style={tw('absolute top-0 h-50 w-full rounded-xl')}
+        source={{ uri: item.photoURL }}
+      />
+
+      <View
+        style={[
+          tw(
+            'absolute bottom-0 flex-row justify-between bg-white w-full px-6 py-3 rounded-b-xl'
+          ),
+          styles.cardShadow,
+        ]}
+      >
+        <View>
+          <Text style={tw('text-xl font-bold')}>
+            {item.firstName} {item.lastName}
+          </Text>
+          <Text>{item.job}</Text>
+        </View>
+        <Text style={tw('text-2xl font-bold')}>{item.age}</Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView>
@@ -33,8 +90,59 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </View>
       {/* End of Header */}
+
+      {/* Cards */}
+      <View style={tw('flex-1')}>
+        <Swiper
+          containerStyle={{ backgroundColor: 'transparent' }}
+          cards={FAKE_USER_DATA}
+          stackSize={5}
+          cardIndex={0}
+          animateCardOpacity
+          verticalSwipe={false}
+          onSwipedLeft={() => {
+            console.log('Swipe PASS');
+          }}
+          onSwipedRight={() => {
+            console.log('Swipe MATCH');
+          }}
+          overlayLabels={{
+            left: {
+              title: 'NOPE',
+              style: {
+                label: {
+                  textAlign: 'right',
+                  color: 'red',
+                },
+              },
+            },
+            right: {
+              title: 'MATCH',
+              style: {
+                label: {
+                  color: '#4ded30',
+                },
+              },
+            },
+          }}
+          renderCard={renderCard}
+        />
+      </View>
     </SafeAreaView>
   );
 };
 
 export default HomeScreen;
+
+const styles = StyleSheet.create({
+  cardShadow: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+});
