@@ -3,7 +3,9 @@ import { initializeApp } from '@firebase/app';
 import { getAuth } from '@firebase/auth';
 import {
   doc,
+  query,
   setDoc,
+  getDocs,
   serverTimestamp,
   onSnapshot,
   getFirestore,
@@ -37,4 +39,4 @@ const auth = getAuth();
 // });
 const db = getFirestore();
 
-export { auth, db, doc, setDoc, onSnapshot, collection, serverTimestamp };
+export { auth, db };

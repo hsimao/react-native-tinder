@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import tw from 'tailwind-rn';
 import useAuth from '../hooks/useAuth';
-import { db, doc, setDoc, serverTimestamp } from '../firebase';
+import { db } from '../firebase';
+import { doc, setDoc } from '@firebase/firestore';
 
 const ModalScreen = () => {
   const { user } = useAuth();
