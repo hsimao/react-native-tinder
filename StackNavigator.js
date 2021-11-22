@@ -29,7 +29,13 @@ const StackNavigator = () => {
           </Stack.Group>
         </>
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Group
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+        </Stack.Group>
       )}
     </Stack.Navigator>
   );
