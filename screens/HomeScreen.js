@@ -6,7 +6,16 @@ import useAuth from '../hooks/useAuth';
 import { SafeAreaView } from 'react-native';
 import { Ionicons, Entypo } from '@expo/vector-icons';
 import Swiper from 'react-native-deck-swiper';
-import { db, doc, onSnapshot, collection } from '../firebase';
+import { db } from '../firebase';
+import {
+  doc,
+  query,
+  setDoc,
+  getDocs,
+  where,
+  onSnapshot,
+  collection,
+} from '@firebase/firestore';
 
 const HomeScreen = () => {
   const swipeRef = useRef(null);
@@ -27,22 +36,54 @@ const HomeScreen = () => {
 
   useEffect(() => {
     let unsub;
+
     const fetchCards = async () => {
-      unsub = onSnapshot(collection(db, 'users'), snapshot => {
-        setProfiles(
-          snapshot.docs
-            .filter(doc => doc.id !== user.uid)
-            .map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            }))
-        );
-      });
+      const passes = await getDocs(
+        collection(db, 'users', user.uid, 'passes')
+      ).then(snapshot => snapshot.docs.map(doc => doc.id));
+
+      const swipes = await getDocs(
+        collection(db, 'users', user.uid, 'swipes')
+      ).then(snapshot => snapshot.docs.map(doc => doc.id));
+
+      // NOTE: 空值給 ['test'], 是避免 firestore query where 傳入空值
+      const passedUserIds = passes.length > 0 ? passes : ['test'];
+      const swipedUserIds = swipes.length > 0 ? swipes : ['test'];
+
+      // 查出當前所有 user, 並排除跟自己和已經 passes、swipes 用戶
+      unsub = onSnapshot(
+        query(
+          collection(db, 'users'),
+          where('id', 'not-in', [...passedUserIds, ...swipedUserIds])
+        ),
+        snapshot => {
+          setProfiles(
+            snapshot.docs
+              .filter(doc => doc.id !== user.uid)
+              .map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+              }))
+          );
+        }
+      );
     };
 
     fetchCards();
     return unsub;
   }, []);
+
+  const swipeLeft = cardIndex => {
+    const userSweped = profiles[cardIndex];
+    if (!userSweped) return;
+    setDoc(doc(db, 'users', user.uid, 'passes', userSweped.id), userSweped);
+  };
+
+  const swipeRight = cardIndex => {
+    const userSweped = profiles[cardIndex];
+    if (!userSweped) return;
+    setDoc(doc(db, 'users', user.uid, 'swipes', userSweped.id), userSweped);
+  };
 
   const renderCard = item =>
     item ? (
@@ -122,12 +163,8 @@ const HomeScreen = () => {
           cardIndex={0}
           animateCardOpacity
           verticalSwipe={false}
-          onSwipedLeft={() => {
-            console.log('Swipe PASS');
-          }}
-          onSwipedRight={() => {
-            console.log('Swipe MATCH');
-          }}
+          onSwipedLeft={swipeLeft}
+          onSwipedRight={swipeRight}
           overlayLabels={{
             left: {
               title: 'NOPE',
