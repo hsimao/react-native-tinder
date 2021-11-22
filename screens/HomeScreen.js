@@ -1,4 +1,4 @@
-import React, { useRef, useState, useLayoutEffect } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import tw from 'tailwind-rn';
@@ -6,37 +6,7 @@ import useAuth from '../hooks/useAuth';
 import { SafeAreaView } from 'react-native';
 import { Ionicons, Entypo } from '@expo/vector-icons';
 import Swiper from 'react-native-deck-swiper';
-import { db, doc, onSnapshot } from '../firebase';
-
-const FAKE_USER_DATA = [
-  {
-    id: 124,
-    firstName: 'Elon',
-    lastName: 'Musk',
-    job: 'Software Developer',
-    photoURL:
-      'https://upload.wikimedia.org/wikipedia/commons/8/85/Elon_Musk_Royal_Society_%28crop1%29.jpg',
-    age: 40,
-  },
-  {
-    id: 123,
-    firstName: 'Mars',
-    lastName: 'CHEN',
-    job: 'Software Developer',
-    photoURL:
-      'https://lh3.googleusercontent.com/ogw/ADea4I5pFdEo3tcn87r64a0g9LdZc931xD3myZMiaaSvGQ=s192-c-mo',
-    age: 27,
-  },
-  {
-    id: 125,
-    firstName: 'Jack',
-    lastName: 'CHEN',
-    job: 'Software Developer',
-    photoURL:
-      'https://gravatar.com/avatar/ed1b7d08248dd08eeac3cfba428b8545?s=400&d=robohash&r=x',
-    age: 21,
-  },
-];
+import { db, doc, onSnapshot, collection } from '../firebase';
 
 const HomeScreen = () => {
   const swipeRef = useRef(null);
@@ -55,6 +25,25 @@ const HomeScreen = () => {
     []
   );
 
+  useEffect(() => {
+    let unsub;
+    const fetchCards = async () => {
+      unsub = onSnapshot(collection(db, 'users'), snapshot => {
+        setProfiles(
+          snapshot.docs
+            .filter(doc => doc.id !== user.uid)
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+        );
+      });
+    };
+
+    fetchCards();
+    return unsub;
+  }, []);
+
   const renderCard = item =>
     item ? (
       <View key={item.id} style={tw('relative bg-white h-3/4 rounded-xl')}>
@@ -72,9 +61,7 @@ const HomeScreen = () => {
           ]}
         >
           <View>
-            <Text style={tw('text-xl font-bold')}>
-              {item.firstName} {item.lastName}
-            </Text>
+            <Text style={tw('text-xl font-bold')}>{item.displayName}</Text>
             <Text>{item.job}</Text>
           </View>
           <Text style={tw('text-2xl font-bold')}>{item.age}</Text>
