@@ -6,15 +6,18 @@ import useAuth from '../hooks/useAuth';
 import { SafeAreaView } from 'react-native';
 import { Ionicons, Entypo } from '@expo/vector-icons';
 import Swiper from 'react-native-deck-swiper';
+import generatedId from '../utils/generatedId';
 import { db } from '../firebase';
 import {
   doc,
   query,
   setDoc,
+  getDoc,
   getDocs,
   where,
   onSnapshot,
   collection,
+  serverTimestamp,
 } from '@firebase/firestore';
 
 const HomeScreen = () => {
@@ -74,15 +77,55 @@ const HomeScreen = () => {
   }, []);
 
   const swipeLeft = cardIndex => {
-    const userSweped = profiles[cardIndex];
-    if (!userSweped) return;
-    setDoc(doc(db, 'users', user.uid, 'passes', userSweped.id), userSweped);
+    const userSwiped = profiles[cardIndex];
+    if (!userSwiped) return;
+    createPasses(user.uid, userSwiped);
   };
 
-  const swipeRight = cardIndex => {
-    const userSweped = profiles[cardIndex];
-    if (!userSweped) return;
-    setDoc(doc(db, 'users', user.uid, 'swipes', userSweped.id), userSweped);
+  const swipeRight = async cardIndex => {
+    const userSwiped = profiles[cardIndex];
+    if (!userSwiped) return;
+
+    createSwiped(user.uid, userSwiped);
+
+    // check if the user swiped on you
+    const hasMatch = await checkUserSwipedWithSelf(userSwiped.id);
+
+    if (hasMatch) {
+      const selfProfile = await getProfileById(user.uid);
+      await createMatch(selfProfile, userSwiped);
+
+      navigation.navigate('Match', { selfProfile, userSwiped });
+    }
+  };
+
+  const createSwiped = (selfId, swipedUser) => {
+    setDoc(doc(db, 'users', selfId, 'swipes', swipedUser.id), swipedUser);
+  };
+
+  const createPasses = (selfId, swipedUser) => {
+    setDoc(doc(db, 'users', selfId, 'passes', swipedUser.id), swipedUser);
+  };
+
+  const getProfileById = async userId => {
+    return await (await getDoc(doc(db, 'users', userId))).data();
+  };
+
+  const checkUserSwipedWithSelf = swipedUserId => {
+    return getDoc(doc(db, 'users', swipedUserId, 'swipes', user.uid))
+      .then(docSnapshot => docSnapshot.exists())
+      .catch(() => false);
+  };
+
+  const createMatch = (self, swiped) => {
+    return setDoc(doc(db, 'matches', generatedId(self.uid, swiped.id)), {
+      users: {
+        [self.id]: self,
+        [swiped.id]: swiped,
+      },
+      usersMatched: [self.id, swiped.id],
+      timestamp: serverTimestamp(),
+    });
   };
 
   const renderCard = item =>
