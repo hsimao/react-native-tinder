@@ -3,6 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import tw from 'tailwind-rn';
 import useAuth from '../hooks/useAuth';
+import { db } from '../firebase';
+import {
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  collection,
+} from '@firebase/firestore';
 import getMatchedUserInfo from '../utils/getMatchedUserInfo';
 
 const ChartRow = ({ matchDetails }) => {
@@ -10,13 +18,27 @@ const ChartRow = ({ matchDetails }) => {
   const { user } = useAuth();
 
   const [matchedUserInfo, setMatchedUserInfo] = useState(null);
+  const [lastMessage, setLastMessage] = useState('');
 
   useEffect(() => {
     setMatchedUserInfo(getMatchedUserInfo(matchDetails.users, user.uid));
   }, [matchDetails, user]);
 
+  useEffect(() => {
+    const unsub = onSnapshot(
+      query(
+        collection(db, 'matches', matchDetails.id, 'messages'),
+        orderBy('timestamp', 'desc')
+      ),
+      snapshot => setLastMessage(snapshot.docs[0]?.data()?.message)
+    );
+
+    return unsub;
+  }, [matchDetails, db]);
+
   return (
     <TouchableOpacity
+      onPress={() => navigation.navigate('Message', { matchDetails })}
       style={[
         tw('flex-row items-center py-3 px-5 mx-3 my-1 rounded-lg bg-white'),
         styles.cardShadow,
@@ -31,7 +53,7 @@ const ChartRow = ({ matchDetails }) => {
         <Text style={tw('text-lg font-semibold')}>
           {matchedUserInfo?.displayName}
         </Text>
-        <Text>Say Hi!</Text>
+        <Text>{lastMessage}</Text>
       </View>
     </TouchableOpacity>
   );

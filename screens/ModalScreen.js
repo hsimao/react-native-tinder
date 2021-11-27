@@ -11,7 +11,7 @@ import {
 import tw from 'tailwind-rn';
 import useAuth from '../hooks/useAuth';
 import { db } from '../firebase';
-import { doc, setDoc } from '@firebase/firestore';
+import { doc, setDoc, serverTimestamp } from '@firebase/firestore';
 
 const ModalScreen = () => {
   const { user } = useAuth();
